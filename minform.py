@@ -35,6 +35,7 @@ Example usage:
 
     # Doing things [####################--------------------] (50%)
 """
+import sys
 import threading
 import time
 
@@ -48,11 +49,18 @@ class _CharacterIterator(threading.Thread):
         self._message    = message
         self._erase      = erase
         self._run        = True
+        self._isatty     = sys.stdout.isatty()
 
     def __enter__(self):
-        self.start()
+        if self._isatty:
+            self.start()
+        else:
+            print(self._message)
 
     def __exit__(self, type, value, traceback):
+        if not self._isatty:
+            return
+
         self._run = False
         self.join()
 
@@ -88,11 +96,18 @@ class Ellipsis(threading.Thread):
         self._message = message
         self._erase   = erase
         self._run     = True
+        self._isatty  = sys.stdout.isatty()
 
     def __enter__(self):
-        self.start()
+        if self._isatty:
+            self.start()
+        else:
+            print(self._message)
 
     def __exit__(self, type, value, traceback):
+        if not self._isatty:
+            return
+
         self._run = False
         self.join()
         
@@ -132,6 +147,9 @@ class ProgressBar(object):
 
     def update(self, k):
         """Update progress bar to indicate `k` items are complete."""
+        if not sys.stdout.isatty():
+            return
+
         filled = int(self._size*float(k)/self._n)
         
         if self._percent:
